@@ -39,8 +39,7 @@ jobs:
           -r win-x64 `
           --self-contained true `
           -p:PublishSingleFile=true `
-          -p:IncludeNativeLibrariesForSelfExtract=true `
-          -o ./publish/app
+          -p:IncludeNativeLibrariesForSelfExtract=true
 
     - name: Build installer
       run: |
@@ -49,14 +48,13 @@ jobs:
           -r win-x64 `
           --self-contained true `
           -p:PublishSingleFile=true `
-          -p:IncludeNativeLibrariesForSelfExtract=true `
-          -o ./publish/installer
+          -p:IncludeNativeLibrariesForSelfExtract=true
 
     - name: Prepare release artifacts
       run: |
         mkdir ./release
-        copy ./publish/app/ClipboardHistory.exe ./release/ClipboardHistory.exe
-        copy ./publish/installer/ClipboardHistoryInstaller.exe ./release/ClipboardHistorySetup.exe
+        copy ./ClipboardHistory/bin/Release/net10.0-windows/win-x64/publish/ClipboardHistory.exe ./release/ClipboardHistory.exe
+        copy ./ClipboardHistoryInstaller/bin/Release/net10.0-windows/win-x64/publish/ClipboardHistoryInstaller.exe ./release/ClipboardHistorySetup.exe
 
     - name: Get version
       id: version
