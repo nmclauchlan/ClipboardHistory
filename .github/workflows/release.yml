@@ -1,0 +1,127 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: |
+        dotnet restore ClipboardHistory/ClipboardHistory.csproj
+        dotnet restore ClipboardHistoryInstaller/ClipboardHistoryInstaller.csproj
+
+    - name: Build main application
+      run: |
+        dotnet publish ClipboardHistory/ClipboardHistory.csproj `
+          -c Release `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -o ./publish/app
+
+    - name: Build installer
+      run: |
+        dotnet publish ClipboardHistoryInstaller/ClipboardHistoryInstaller.csproj `
+          -c Release `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -o ./publish/installer
+
+    - name: Prepare release artifacts
+      run: |
+        mkdir ./release
+        copy ./publish/app/ClipboardHistory.exe ./release/ClipboardHistory.exe
+        copy ./publish/installer/ClipboardHistoryInstaller.exe ./release/ClipboardHistorySetup.exe
+
+    - name: Get version
+      id: version
+      run: |
+        if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+          echo "VERSION=${{ github.event.inputs.version }}" >> $env:GITHUB_OUTPUT
+        } else {
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        }
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ClipboardHistory-${{ steps.version.outputs.VERSION }}
+        path: ./release/*
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
+        name: Clipboard History ${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        files: |
+          ./release/ClipboardHistory.exe
+          ./release/ClipboardHistorySetup.exe
+        body: |
+          ## Clipboard History v${{ steps.version.outputs.VERSION }}
+
+          ### Downloads
+
+          | File | Description |
+          |------|-------------|
+          | `ClipboardHistorySetup.exe` | **Recommended** - Installer with auto-start setup |
+          | `ClipboardHistory.exe` | Portable version - just run it |
+
+          ### Installation
+
+          1. Download `ClipboardHistorySetup.exe`
+          2. Run the installer
+          3. Press `Scroll Lock` anytime to access your clipboard history
+
+          ### What's New
+
+          See the [commit history](../../commits/v${{ steps.version.outputs.VERSION }}) for changes.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-check:
+    runs-on: windows-latest
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Build
+      run: |
+        dotnet build ClipboardHistory/ClipboardHistory.csproj -c Release
+        dotnet build ClipboardHistoryInstaller/ClipboardHistoryInstaller.csproj -c Release

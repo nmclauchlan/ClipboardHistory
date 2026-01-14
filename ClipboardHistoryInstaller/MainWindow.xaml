@@ -1,0 +1,185 @@
+<Window x:Class="ClipboardHistoryInstaller.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Clipboard History Installer"
+        Height="400" Width="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#1e1e1e">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#0078d4" Padding="24,20">
+            <StackPanel>
+                <TextBlock Text="Clipboard History"
+                         FontSize="28"
+                         FontWeight="SemiBold"
+                         Foreground="White"/>
+                <TextBlock Text="Setup Wizard"
+                         FontSize="14"
+                         Foreground="#cce4f7"
+                         Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="1" Margin="24">
+            <!-- Welcome Page -->
+            <StackPanel x:Name="WelcomePage" Visibility="Visible">
+                <TextBlock Text="Welcome to Clipboard History Setup"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="White"
+                         Margin="0,0,0,16"/>
+
+                <TextBlock TextWrapping="Wrap"
+                         Foreground="#b0b0b0"
+                         FontSize="13"
+                         LineHeight="20">
+                    This will install Clipboard History on your computer. The application allows you to:
+                </TextBlock>
+
+                <StackPanel Margin="16,12,0,0">
+                    <TextBlock Text="&#x2022; Keep a history of everything you copy" Foreground="#b0b0b0" FontSize="13"/>
+                    <TextBlock Text="&#x2022; Quickly access previous clipboard items" Foreground="#b0b0b0" FontSize="13" Margin="0,4,0,0"/>
+                    <TextBlock Text="&#x2022; Store screenshots and images" Foreground="#b0b0b0" FontSize="13" Margin="0,4,0,0"/>
+                    <TextBlock Text="&#x2022; Press Scroll Lock to open anytime" Foreground="#b0b0b0" FontSize="13" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <CheckBox x:Name="StartWithWindowsCheckbox"
+                        Content="Start Clipboard History when Windows starts"
+                        Foreground="#e0e0e0"
+                        IsChecked="True"
+                        Margin="0,24,0,0"
+                        FontSize="13"/>
+
+                <CheckBox x:Name="LaunchAfterInstallCheckbox"
+                        Content="Launch Clipboard History after installation"
+                        Foreground="#e0e0e0"
+                        IsChecked="True"
+                        Margin="0,8,0,0"
+                        FontSize="13"/>
+            </StackPanel>
+
+            <!-- Progress Page -->
+            <StackPanel x:Name="ProgressPage" Visibility="Collapsed" VerticalAlignment="Center">
+                <TextBlock x:Name="StatusText"
+                         Text="Installing..."
+                         FontSize="16"
+                         Foreground="White"
+                         HorizontalAlignment="Center"
+                         Margin="0,0,0,16"/>
+
+                <ProgressBar x:Name="ProgressBar"
+                           Height="8"
+                           IsIndeterminate="True"
+                           Background="#3d3d3d"
+                           Foreground="#0078d4"/>
+
+                <TextBlock x:Name="DetailText"
+                         Text="Copying files..."
+                         FontSize="12"
+                         Foreground="#808080"
+                         HorizontalAlignment="Center"
+                         Margin="0,12,0,0"/>
+            </StackPanel>
+
+            <!-- Complete Page -->
+            <StackPanel x:Name="CompletePage" Visibility="Collapsed" VerticalAlignment="Center">
+                <TextBlock Text="&#xE73E;"
+                         FontFamily="Segoe MDL2 Assets"
+                         FontSize="48"
+                         Foreground="#4caf50"
+                         HorizontalAlignment="Center"/>
+
+                <TextBlock x:Name="CompleteTitle"
+                         Text="Installation Complete!"
+                         FontSize="20"
+                         FontWeight="SemiBold"
+                         Foreground="White"
+                         HorizontalAlignment="Center"
+                         Margin="0,16,0,8"/>
+
+                <TextBlock x:Name="CompleteMessage"
+                         Text="Clipboard History has been installed successfully."
+                         FontSize="13"
+                         Foreground="#b0b0b0"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap"/>
+
+                <TextBlock Text="Press Scroll Lock anytime to open your clipboard history."
+                         FontSize="13"
+                         Foreground="#808080"
+                         HorizontalAlignment="Center"
+                         Margin="0,16,0,0"/>
+            </StackPanel>
+
+            <!-- Error Page -->
+            <StackPanel x:Name="ErrorPage" Visibility="Collapsed" VerticalAlignment="Center">
+                <TextBlock Text="&#xE783;"
+                         FontFamily="Segoe MDL2 Assets"
+                         FontSize="48"
+                         Foreground="#f44336"
+                         HorizontalAlignment="Center"/>
+
+                <TextBlock Text="Installation Failed"
+                         FontSize="20"
+                         FontWeight="SemiBold"
+                         Foreground="White"
+                         HorizontalAlignment="Center"
+                         Margin="0,16,0,8"/>
+
+                <TextBlock x:Name="ErrorMessage"
+                         Text="An error occurred during installation."
+                         FontSize="13"
+                         Foreground="#b0b0b0"
+                         HorizontalAlignment="Center"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2d2d2d" Padding="24,16">
+            <Grid>
+                <Button x:Name="CancelButton"
+                      Content="Cancel"
+                      HorizontalAlignment="Left"
+                      Padding="20,8"
+                      Background="#3d3d3d"
+                      Foreground="#e0e0e0"
+                      BorderThickness="0"
+                      Cursor="Hand"
+                      Click="CancelButton_Click"/>
+
+                <Button x:Name="InstallButton"
+                      Content="Install"
+                      HorizontalAlignment="Right"
+                      Padding="24,8"
+                      Background="#0078d4"
+                      Foreground="White"
+                      BorderThickness="0"
+                      Cursor="Hand"
+                      Click="InstallButton_Click"/>
+
+                <Button x:Name="CloseButton"
+                      Content="Close"
+                      HorizontalAlignment="Right"
+                      Padding="24,8"
+                      Background="#0078d4"
+                      Foreground="White"
+                      BorderThickness="0"
+                      Cursor="Hand"
+                      Visibility="Collapsed"
+                      Click="CloseButton_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
