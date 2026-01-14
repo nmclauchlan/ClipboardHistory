@@ -8,29 +8,33 @@
         ShowInTaskbar="False"
         Topmost="True"
         ResizeMode="NoResize"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        RenderOptions.BitmapScalingMode="LowQuality"
+        TextOptions.TextFormattingMode="Display"
         Deactivated="Window_Deactivated">
 
     <Window.Resources>
         <Storyboard x:Key="SlideIn">
             <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                           From="400" To="0" Duration="0:0:0.25">
+                           From="400" To="0" Duration="0:0:0.2">
                 <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut"/>
+                    <QuadraticEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="0" To="1" Duration="0:0:0.2"/>
+                           From="0" To="1" Duration="0:0:0.15"/>
         </Storyboard>
 
         <Storyboard x:Key="SlideOut">
             <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                           From="0" To="400" Duration="0:0:0.2">
+                           From="0" To="400" Duration="0:0:0.15">
                 <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn"/>
+                    <QuadraticEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="1" To="0" Duration="0:0:0.15"/>
+                           From="1" To="0" Duration="0:0:0.1"/>
         </Storyboard>
     </Window.Resources>
 
@@ -38,9 +42,9 @@
         <Border.RenderTransform>
             <TranslateTransform X="400"/>
         </Border.RenderTransform>
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5"/>
-        </Border.Effect>
+        <Border.CacheMode>
+            <BitmapCache RenderAtScale="1"/>
+        </Border.CacheMode>
 
         <Grid>
             <Grid.RowDefinitions>
@@ -120,9 +124,16 @@
                    Background="Transparent"
                    BorderThickness="0"
                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                   VirtualizingPanel.IsVirtualizing="True"
+                   VirtualizingPanel.VirtualizationMode="Recycling"
                    ItemContainerStyle="{StaticResource ClipboardItemStyle}"
-                   MouseDoubleClick="ClipboardList_MouseDoubleClick"
+                   SelectionChanged="ClipboardList_SelectionChanged"
                    KeyDown="ClipboardList_KeyDown">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid>
@@ -143,7 +154,8 @@
                                     Background="#2d2d2d">
                                 <Image Source="{Binding ThumbnailSource}"
                                        Width="60" Height="45"
-                                       Stretch="Uniform"/>
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="LowQuality"/>
                             </Border>
 
                             <!-- Type icon for non-images -->
@@ -174,7 +186,8 @@
 
             <!-- Footer -->
             <Border Grid.Row="3" Background="#2d2d2d" Padding="12,10">
-                <TextBlock Text="Double-click or Enter to copy • Scroll Lock to toggle • Esc to close"
+                <TextBlock x:Name="FooterText"
+                         Text="Click to copy • Scroll Lock to toggle • Esc to close"
                          FontSize="11"
                          Foreground="#666"
                          HorizontalAlignment="Center"/>

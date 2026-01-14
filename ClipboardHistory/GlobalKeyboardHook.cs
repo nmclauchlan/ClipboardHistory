@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 namespace ClipboardHistory;
 
@@ -7,12 +8,14 @@ public class GlobalKeyboardHook
 {
     private const int WH_KEYBOARD_LL = 13;
     private const int WM_KEYDOWN = 0x0100;
-    private const int VK_SCROLL = 0x91;
 
     private IntPtr _hookId = IntPtr.Zero;
     private readonly LowLevelKeyboardProc _proc;
 
-    public event EventHandler? ScrollLockPressed;
+    public int TargetVirtualKey { get; set; } = 0x91; // VK_SCROLL (Scroll Lock)
+    public ModifierKeys RequiredModifiers { get; set; } = ModifierKeys.None;
+
+    public event EventHandler? HotkeyPressed;
 
     public GlobalKeyboardHook()
     {
@@ -33,6 +36,12 @@ public class GlobalKeyboardHook
         }
     }
 
+    public void UpdateHotkey(int virtualKey, ModifierKeys modifiers)
+    {
+        TargetVirtualKey = virtualKey;
+        RequiredModifiers = modifiers;
+    }
+
     private IntPtr SetHook(LowLevelKeyboardProc proc)
     {
         using var curProcess = Process.GetCurrentProcess();
@@ -46,13 +55,34 @@ public class GlobalKeyboardHook
         {
             int vkCode = Marshal.ReadInt32(lParam);
 
-            if (vkCode == VK_SCROLL)
+            if (vkCode == TargetVirtualKey && CheckModifiers())
             {
-                ScrollLockPressed?.Invoke(this, EventArgs.Empty);
+                HotkeyPressed?.Invoke(this, EventArgs.Empty);
             }
         }
 
         return CallNextHookEx(_hookId, nCode, wParam, lParam);
+    }
+
+    private bool CheckModifiers()
+    {
+        if (RequiredModifiers == ModifierKeys.None)
+            return true;
+
+        bool ctrlRequired = RequiredModifiers.HasFlag(ModifierKeys.Control);
+        bool altRequired = RequiredModifiers.HasFlag(ModifierKeys.Alt);
+        bool shiftRequired = RequiredModifiers.HasFlag(ModifierKeys.Shift);
+        bool winRequired = RequiredModifiers.HasFlag(ModifierKeys.Windows);
+
+        bool ctrlPressed = (GetAsyncKeyState(0x11) & 0x8000) != 0; // VK_CONTROL
+        bool altPressed = (GetAsyncKeyState(0x12) & 0x8000) != 0;  // VK_MENU (Alt)
+        bool shiftPressed = (GetAsyncKeyState(0x10) & 0x8000) != 0; // VK_SHIFT
+        bool winPressed = (GetAsyncKeyState(0x5B) & 0x8000) != 0 || (GetAsyncKeyState(0x5C) & 0x8000) != 0; // VK_LWIN/VK_RWIN
+
+        return ctrlRequired == ctrlPressed &&
+               altRequired == altPressed &&
+               shiftRequired == shiftPressed &&
+               winRequired == winPressed;
     }
 
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
@@ -69,4 +99,7 @@ public class GlobalKeyboardHook
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vKey);
 }

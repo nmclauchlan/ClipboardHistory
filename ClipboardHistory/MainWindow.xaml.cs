@@ -14,14 +14,16 @@ public partial class MainWindow : Window
 {
     private readonly ClipboardHistoryManager _historyManager;
     private readonly ClipboardMonitorWpf _clipboardMonitor;
+    private readonly SettingsManager _settingsManager;
     private readonly ObservableCollection<ClipboardItemViewModel> _items;
     private bool _isVisible;
     private bool _forceClose;
 
-    public MainWindow()
+    public MainWindow(SettingsManager settingsManager)
     {
         InitializeComponent();
 
+        _settingsManager = settingsManager;
         _historyManager = new ClipboardHistoryManager(maxEntries: 100);
         _clipboardMonitor = new ClipboardMonitorWpf(_historyManager);
         _items = new ObservableCollection<ClipboardItemViewModel>();
@@ -37,6 +39,7 @@ public partial class MainWindow : Window
 
         PositionWindow();
         RefreshList();
+        UpdateFooterText();
     }
 
     private void PositionWindow()
@@ -46,6 +49,12 @@ public partial class MainWindow : Window
         Height = screen.Height;
         Left = screen.Right - Width;
         Top = screen.Top;
+    }
+
+    public void UpdateFooterText()
+    {
+        var hotkeyText = _settingsManager.Settings.GetHotkeyDisplayString();
+        FooterText.Text = $"Click to copy • {hotkeyText} to toggle • Esc to close";
     }
 
     public void ShowPanel()
@@ -97,6 +106,12 @@ public partial class MainWindow : Window
         Close();
     }
 
+    public void ClearHistory()
+    {
+        _historyManager.ClearHistory();
+        RefreshList();
+    }
+
     private void RefreshList()
     {
         var searchText = SearchBox.Text.Trim();
@@ -114,11 +129,44 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CopySelectedItem()
+    private async void CopySelectedItemWithEffect()
     {
         if (ClipboardList.SelectedItem is ClipboardItemViewModel item)
         {
+            // Get the selected ListBoxItem for visual feedback
+            var listBoxItem = ClipboardList.ItemContainerGenerator.ContainerFromItem(item) as System.Windows.Controls.ListBoxItem;
+
+            // Copy the item
             item.CopyToClipboard();
+
+            // Apply simple flash effect using opacity animation (GPU accelerated)
+            if (listBoxItem != null)
+            {
+                var highlightBrush = new System.Windows.Media.SolidColorBrush(
+                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#4a7c4a"));
+                listBoxItem.Background = highlightBrush;
+
+                var animation = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.0,
+                    Duration = TimeSpan.FromMilliseconds(200)
+                };
+
+                animation.Completed += (s, e) =>
+                {
+                    listBoxItem.Background = System.Windows.Media.Brushes.Transparent;
+                };
+
+                highlightBrush.BeginAnimation(System.Windows.Media.Brush.OpacityProperty, animation);
+
+                await Task.Delay(180);
+            }
+            else
+            {
+                await Task.Delay(100);
+            }
+
             HidePanel();
         }
     }
@@ -159,16 +207,19 @@ public partial class MainWindow : Window
         RefreshList();
     }
 
-    private void ClipboardList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    private void ClipboardList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        CopySelectedItem();
+        if (ClipboardList.SelectedItem != null)
+        {
+            CopySelectedItemWithEffect();
+        }
     }
 
     private void ClipboardList_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
         {
-            CopySelectedItem();
+            CopySelectedItemWithEffect();
             e.Handled = true;
         }
     }
@@ -183,8 +234,7 @@ public partial class MainWindow : Window
 
         if (result == MessageBoxResult.Yes)
         {
-            _historyManager.ClearHistory();
-            RefreshList();
+            ClearHistory();
         }
     }
 }
