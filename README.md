@@ -2,8 +2,6 @@
 
 A lightweight Windows clipboard manager that keeps a history of everything you copy. Access your clipboard history anytime with a single keypress.
 
-![Clipboard History Screenshot](docs/screenshot.png)
-
 ## Features
 
 - **Instant Access** - Press `Scroll Lock` to open the clipboard history panel
